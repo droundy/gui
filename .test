@@ -1,0 +1,5 @@
+#!/usr/bin/sh
+
+set -ev
+
+gb
