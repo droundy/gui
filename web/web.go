@@ -34,7 +34,7 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 		out += "</table>\n"
 	case *gui.Button:
 		myname := widget.Text.String
-		mypath := path.Join(parent, myname)
+		mypath := path.Join(parent, widget.Name())
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
 	default:
@@ -47,7 +47,7 @@ func Serve(port int, widget gui.Widget) os.Error {
 	// We have a style sheet called style.css
 	http.HandleFunc("/style.css", styleServer)
 	http.HandleFunc("/jsupdate", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("query = ", req.URL.RawQuery)
+		//fmt.Println("query = ", req.URL.RawQuery)
 
 		// Wait for the response...
 		ch := make(chan []byte)
@@ -78,12 +78,13 @@ func Serve(port int, widget gui.Widget) os.Error {
 		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
 		go func() {
 			// This is the generator of pages
-			fmt.Println("Html is:", WidgetToHtml("", widget))
+			//fmt.Println("Html is:", WidgetToHtml("", widget))
 			cc.pages <- []byte(WidgetToHtml("", widget))
 			// FIXME I should handle events next!
 			for {
 				e := <- cc.events
 				fmt.Printf("Event is %#v\n", e)
+				fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
 				cc.pages <- []byte(WidgetToHtml("", widget))
 			}
 		}()
