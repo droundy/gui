@@ -84,8 +84,9 @@ func Serve(port int, widget gui.Widget) os.Error {
 			for {
 				e := <- cc.events
 				fmt.Printf("Event is %#v\n", e)
-				fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
+				//fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
 				newWidget := widget.Handle(gui.Event{e.widget, e.event})
+				//fmt.Printf("New widget is %#v\n", newWidget)
 				if newWidget != nil {
 					widget = newWidget
 					cc.pages <- []byte(WidgetToHtml("", widget))

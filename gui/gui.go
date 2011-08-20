@@ -69,7 +69,7 @@ func (w *Table) Handle(event Event) Widget {
 		if newij != nil {
 			w.Rows[i][j] = newij
 		}
-		return newij
+		return w
 	}
 	return nil
 }
