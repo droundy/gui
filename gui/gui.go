@@ -30,6 +30,25 @@ func (w *Text) Handle(event Event) Widget {
 	return nil
 }
 
+type EditText struct {
+	Text
+	HandleChanged
+}
+func (w *EditText) Handle(event Event) Widget {
+	if event.Widget != w.Name() {
+		return nil
+	}
+	switch strings.SplitN(event.Event, ":", 2)[0] {
+	case "onchange":
+		old := w.Text.String
+		w.Text.String = strings.SplitN(event.Event, ":", 2)[1]
+		if w.HandleChanged != nil {
+			return w.HandleChanged(old)
+		}
+	}
+	return nil
+}
+
 type Table struct {
 	Rows [][]Widget
 }
@@ -115,3 +134,4 @@ type Event struct {
 }
 
 type HandleClick func() Widget
+type HandleChanged func(old string) Widget

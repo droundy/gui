@@ -21,7 +21,7 @@ func main() {
 		[][]gui.Widget{
 			{ &gui.Text{"Hello world"} },
 			{ button },
-			{ &gui.Text{"Goodbye world"}, &gui.Text{"And the end"} },
+			{ &gui.Text{"Goodbye world"}, &gui.EditText{Text: gui.Text{"And the end"}} },
 		},
 	}
 	err := web.Serve(12345, widget)

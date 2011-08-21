@@ -11,9 +11,14 @@ import (
 )
 
 func WidgetToHtml(parent string, widget gui.Widget) (out string) {
+	mypath := path.Join(parent, widget.Name())
 	switch widget := widget.(type) {
 	case *gui.Text:
 		return html.EscapeString(widget.String)
+	case *gui.EditText:
+		myname := widget.Text.String
+		return `<input type="text" onchange="say('` + mypath +
+			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `" />`
 	case *gui.Table:
 		out = "<table>\n"
 		for i,r := range widget.Rows {
@@ -34,7 +39,6 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 		out += "</table>\n"
 	case *gui.Button:
 		myname := widget.Text.String
-		mypath := path.Join(parent, widget.Name())
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
 	default:
