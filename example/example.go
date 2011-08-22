@@ -8,27 +8,57 @@ import (
 )
 
 func main() {
-	button := &gui.Button{Text: gui.Text{"Hello world"}}
-	button.HandleClick = func() gui.Widget {
-		if button.Text.String == "Hello world" {
-			button.Text.String = "Goodbye world"
-		} else {
-			button.Text.String = "Hello world"
-		}
-		return button
-	}
-	widget := &gui.Table{
-		[][]gui.Widget{
-			{ &gui.Text{"Hello world"} },
-			{ button },
-			{ &gui.Text{"Goodbye world"}, &gui.EditText{Text: gui.Text{"And the end"}} },
-		},
-	}
-	err := web.Serve(12345, widget)
+
+	err := web.Serve(12345, NewWidget)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
 	} else {
 		fmt.Println("Exited successfully!")
 	}
+}
+
+func NewWidget() gui.Widget {
+	namebox := &gui.EditText{}
+	namerow := &gui.Table {
+		[][]gui.Widget{
+			{ &gui.Text{"Name:"}, namebox },
+		},
+	}
+	partnerbox := &gui.EditText{}
+	partnerrow := &gui.Table {
+		[][]gui.Widget{
+			{ &gui.Text{"Partner:"}, partnerbox },
+		},
+	}
+	dotoday := &gui.TextArea{}
+	learntoday := &gui.TextArea{}
+
+	button := &gui.Button{Text: gui.Text{"Submit"}}
+
+	widget := &gui.Table{
+		[][]gui.Widget{
+			{ namerow },
+			{ partnerrow },
+			{ &gui.Text{"What did you do today?"} },
+			{ dotoday },
+			{ &gui.Text{"What did you learn today?"} },
+			{ learntoday },
+			{ button },
+		},
+	}
+	button.HandleClick = func() gui.Widget {
+		fmt.Println("Name:", namebox.Text.String)
+		fmt.Println("Partner:", partnerbox.Text.String)
+		fmt.Println("Did >>>>>>")
+		fmt.Println(dotoday.Text.String)
+		fmt.Println("Learned >>>>>>")
+		fmt.Println(learntoday.Text.String)
+
+		widget.Rows = [][]gui.Widget {
+			{ &gui.Text{ "Thank you, " + namebox.Text.String + "!" } },
+		}
+		return nil
+	}
+	return widget
 }

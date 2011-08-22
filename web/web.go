@@ -19,6 +19,10 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 		myname := widget.Text.String
 		return `<input type="text" onchange="say('` + mypath +
 			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `" />`
+	case *gui.TextArea:
+		myname := widget.Text.String
+		return `<textarea cols="80" rows="5" onchange="say('` + mypath +
+			`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
 	case *gui.Table:
 		out = "<table>\n"
 		for i,r := range widget.Rows {
@@ -31,7 +35,7 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 			}
 			out += `  <tr class="`+ class + `">` + "\n"
 			for j,w := range r {
-				whtml := WidgetToHtml(fmt.Sprint(i, "/", j), w)
+				whtml := WidgetToHtml(path.Join(parent, fmt.Sprint(i, "/", j)), w)
 				out += "    <td>" + whtml + "</td>\n"
 			}
 			out += "  </tr>\n"
@@ -47,7 +51,7 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 	return
 }
 
-func Serve(port int, widget gui.Widget) os.Error {
+func Serve(port int, newWidget func() gui.Widget) os.Error {
 	// We have a style sheet called style.css
 	http.HandleFunc("/style.css", styleServer)
 	http.HandleFunc("/jsupdate", func(w http.ResponseWriter, req *http.Request) {
@@ -82,7 +86,9 @@ func Serve(port int, widget gui.Widget) os.Error {
 		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
 		go func() {
 			// This is the generator of pages
-			//fmt.Println("Html is:", WidgetToHtml("", widget))
+			widget := newWidget()
+			//fmt.Printf("widget is:\n%#v\n", widget)
+			fmt.Println("Html is:", WidgetToHtml("", widget))
 			cc.pages <- []byte(WidgetToHtml("", widget))
 			// FIXME I should handle events next!
 			for {
