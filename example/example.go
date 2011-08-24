@@ -47,7 +47,7 @@ func NewWidget() gui.Widget {
 			{ button },
 		},
 	}
-	button.HandleClick = func() gui.Widget {
+	button.HandleClick = func() (modified gui.Widget, refresh bool) {
 		fmt.Println("Name:", namebox.Text.String)
 		fmt.Println("Partner:", partnerbox.Text.String)
 		fmt.Println("Did >>>>>>")
@@ -58,7 +58,7 @@ func NewWidget() gui.Widget {
 		widget.Rows = [][]gui.Widget {
 			{ &gui.Text{ "Thank you, " + namebox.Text.String + "!" } },
 		}
-		return nil
+		return nil, true
 	}
 	return widget
 }

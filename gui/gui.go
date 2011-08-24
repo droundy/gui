@@ -26,9 +26,9 @@ func (t *Text) Lookup(p string) Widget {
 func (t *Text) Name() string {
 	return leafName(t)
 }
-func (w *Text) Handle(event Event) Widget {
+func (w *Text) Handle(event Event) (Widget, bool) {
 	fmt.Println("Got Handle even in *gui.Text")
-	return nil
+	return nil, false
 }
 
 type EditText struct {
@@ -41,11 +41,11 @@ func (t *EditText) Lookup(p string) Widget {
 func (t *EditText) Name() string {
 	return leafName(t)
 }
-func (w *EditText) Handle(event Event) Widget {
+func (w *EditText) Handle(event Event) (modified Widget, refresh bool) {
 	//fmt.Printf("Got handle of %#v in %#v\n", event, w)
 	if event.Widget != w.Name() {
 		fmt.Println("It isn't me:", w.Name(), event.Widget)
-		return nil
+		return
 	}
 	switch strings.SplitN(event.Event, ":", 2)[0] {
 	case "onchange":
@@ -55,7 +55,7 @@ func (w *EditText) Handle(event Event) Widget {
 			return w.HandleChanged(old)
 		}
 	}
-	return nil
+	return
 }
 
 type TextArea struct {
@@ -97,17 +97,19 @@ func (t *Table) lookInside(p string) (i int, j int, rest string, ok bool) {
 	}
 	return i, j, s[2], true
 }
-func (w *Table) Handle(event Event) Widget {
+func (w *Table) Handle(event Event) (modified Widget, refresh bool) {
 	if i,j,rest,ok := w.lookInside(event.Widget); ok {
 		event.Widget = rest
 		//fmt.Printf("Passing off %#v to %#v\n", event, w.Rows[i][j])
-		newij := w.Rows[i][j].Handle(event)
+		newij, refresh := w.Rows[i][j].Handle(event)
 		if newij != nil {
 			w.Rows[i][j] = newij
+			fmt.Println("Something changed.")
+			return w, refresh
 		}
-		return w
+		return nil, refresh
 	}
-	return nil
+	return
 }
 
 type Button struct {
@@ -120,9 +122,9 @@ func (b *Button) Lookup(p string) Widget {
 func (b *Button) Name() string {
 	return "Button-" + b.Text.String
 }
-func (w *Button) Handle(event Event) Widget {
+func (w *Button) Handle(event Event) (modified Widget, refresh bool) {
 	if event.Widget != w.Name() {
-		return nil
+		return
 	}
 	switch event.Event {
 	case "onclick":
@@ -132,7 +134,7 @@ func (w *Button) Handle(event Event) Widget {
 			fmt.Println("This button doesn't do anything")
 		}
 	}
-	return nil
+	return
 }
 
 type Widget interface {
@@ -140,9 +142,10 @@ type Widget interface {
 	Lookup(string) Widget // nil indicates no such widget
 	Name() string // this is a programmer-friendly name for the widget
 	// We have no static checking of which events are handled. A nil
-	// return value from Handle means that nothing was changed and we
-	// don't need to redraw the widget.
-	Handle(event Event) Widget
+	// return value from Handle means that this widget wasn't changed.
+	// The bool argument indicates whether we need to redraw everything,
+	// e.g. if Handle changed some other widget.
+	Handle(event Event) (modified Widget, refresh bool)
 }
 
 type Event struct {
@@ -150,5 +153,5 @@ type Event struct {
 	Event string
 }
 
-type HandleClick func() Widget
-type HandleChanged func(old string) Widget
+type HandleClick func() (modified Widget, refresh bool)
+type HandleChanged func(old string) (modified Widget, refresh bool)
