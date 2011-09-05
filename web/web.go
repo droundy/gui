@@ -1,7 +1,7 @@
 package web
 
 import (
-	"gui"
+	"gui/data"
 	"io"
 	"fmt"
 	"os"
@@ -10,20 +10,20 @@ import (
 	"path"
 )
 
-func WidgetToHtml(parent string, widget gui.Widget) (out string) {
+func WidgetToHtml(parent string, widget data.Widget) (out string) {
 	mypath := path.Join(parent, widget.Name())
 	switch widget := widget.(type) {
-	case *gui.Text:
+	case *data.Text:
 		return html.EscapeString(widget.String)
-	case *gui.EditText:
+	case *data.EditText:
 		myname := widget.Text.String
 		return `<input type="text" onchange="say('` + mypath +
 			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `" />`
-	case *gui.TextArea:
+	case *data.TextArea:
 		myname := widget.Text.String
 		return `<textarea cols="80" rows="5" onchange="say('` + mypath +
 			`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
-	case *gui.Table:
+	case *data.Table:
 		out = "<table>\n"
 		for i,r := range widget.Rows {
 			class := "even" // I define classes for even and odd rows
@@ -41,17 +41,17 @@ func WidgetToHtml(parent string, widget gui.Widget) (out string) {
 			out += "  </tr>\n"
 		}
 		out += "</table>\n"
-	case *gui.Button:
+	case *data.Button:
 		myname := widget.Text.String
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
 	default:
-		panic(fmt.Sprintf("Unhandled gui.Widget type! %T", widget))
+		panic(fmt.Sprintf("Unhandled data.Widget type! %T", widget))
 	}
 	return
 }
 
-func Serve(port int, newWidget func() gui.Widget) os.Error {
+func Serve(title string, port int, newWidget func() data.Widget) os.Error {
 	// We have a style sheet called style.css
 	http.HandleFunc("/style.css", styleServer)
 	http.HandleFunc("/jsupdate", func(w http.ResponseWriter, req *http.Request) {
@@ -81,21 +81,21 @@ func Serve(port int, newWidget func() gui.Widget) os.Error {
 	// And we listen on the root for our gui program
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		n := "job-" + (<- uniqueids)
-		io.WriteString(w, skeletonpage(n, req))
+		io.WriteString(w, skeletonpage(title, n, req))
 
 		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
 		go func() {
 			// This is the generator of pages
 			widget := newWidget()
 			//fmt.Printf("widget is:\n%#v\n", widget)
-			fmt.Println("Html is:", WidgetToHtml("", widget))
+			//fmt.Println("Html is:", WidgetToHtml("", widget))
 			cc.pages <- []byte(WidgetToHtml("", widget))
 			// FIXME I should handle events next!
 			for {
 				e := <- cc.events
 				fmt.Printf("Event is %#v\n", e)
 				//fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
-				newWidget, refresh := widget.Handle(gui.Event{e.widget, e.event})
+				newWidget, refresh := widget.Handle(data.Event{e.widget, e.event})
 				//fmt.Printf("New widget is %#v\n", newWidget)
 				if newWidget != nil {
 					widget = newWidget
@@ -124,11 +124,11 @@ func init() {
 	}()
 }
 
-func skeletonpage(query string, req *http.Request) string {
+func skeletonpage(title, query string, req *http.Request) string {
 	return `<!DOCTYPE HTML>
 <html>
   <head>
-    <title>Long polling test</title>
+    <title>` + title + `</title>
     <link href="/style.css" rel="stylesheet" type="text/css" />
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
   </head>
@@ -159,7 +159,11 @@ func skeletonpage(query string, req *http.Request) string {
       }
       
       $.get('/jsstatus', function(response) {
-        $('textarea').text(response);
+        if (response.substr(0,8) == 'setpath ') {
+          history.pushState('', response.substr(8), response.substr(8));
+        } else {
+          $('textarea').text(response);
+        }
         _poll();
       });
     }
