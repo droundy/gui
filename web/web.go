@@ -168,6 +168,8 @@ func skeletonpage(title, query string, req *http.Request) string {
              history.pushState('', response.substr(8), response.substr(8));
            } else if (response.substr(0,9) == 'settitle ') {
              document.title = response.substr(9)
+           } else if (response.length < 10) {
+             return // looks like server has exited
            } else {
              everything.innerHTML=response;
            }
