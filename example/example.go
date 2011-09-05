@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	err := web.Serve("Class survey", 12345, NewWidget)
+	err := web.Serve(12345, NewWidget)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
@@ -18,12 +18,18 @@ func main() {
 	}
 }
 
-func NewWidget() data.Widget {
+func NewWidget() *data.Window {
+	window := data.Window{ "Class survey", "", nil }
+	
 	namebox := &data.EditText{}
 	namerow := &data.Table {
 		[][]data.Widget{
 			{ &data.Text{"Name:"}, namebox },
 		},
+	}
+	namebox.HandleChanged = func(old string) (modified data.Widget, refresh bool) {
+		window.Title = `Survey of ` + namebox.Text.String
+		return
 	}
 	partnerbox := &data.EditText{}
 	partnerrow := &data.Table {
@@ -50,6 +56,7 @@ func NewWidget() data.Widget {
 			{ button },
 		},
 	}
+	window.Widget = widget
 	button.HandleClick = func() (modified data.Widget, refresh bool) {
 		fmt.Println("Name:", namebox.Text.String)
 		fmt.Println("Partner:", partnerbox.Text.String)
@@ -63,5 +70,5 @@ func NewWidget() data.Widget {
 		}
 		return nil, true
 	}
-	return widget
+	return &window
 }

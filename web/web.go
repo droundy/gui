@@ -45,13 +45,15 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 		myname := widget.Text.String
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
+	case *data.Window:
+		return WidgetToHtml(parent, widget.Widget)
 	default:
 		panic(fmt.Sprintf("Unhandled data.Widget type! %T", widget))
 	}
 	return
 }
 
-func Serve(title string, port int, newWidget func() data.Widget) os.Error {
+func Serve(port int, newWidget func() *data.Window) os.Error {
 	// We have a style sheet called style.css
 	http.HandleFunc("/style.css", styleServer)
 	http.HandleFunc("/jsupdate", func(w http.ResponseWriter, req *http.Request) {
@@ -80,26 +82,38 @@ func Serve(title string, port int, newWidget func() data.Widget) os.Error {
 	})
 	// And we listen on the root for our gui program
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		// This is the generator of pages
+		widget := newWidget()
+
 		n := "job-" + (<- uniqueids)
-		io.WriteString(w, skeletonpage(title, n, req))
+		oldtitle := widget.Title
+		oldpath := widget.Path
+		io.WriteString(w, skeletonpage(oldtitle, n, req))
 
 		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
 		go func() {
-			// This is the generator of pages
-			widget := newWidget()
 			//fmt.Printf("widget is:\n%#v\n", widget)
 			//fmt.Println("Html is:", WidgetToHtml("", widget))
+			cc.pages <- []byte(`settitle ` + oldtitle)
+			cc.pages <- []byte(`setpath ` + oldpath)
 			cc.pages <- []byte(WidgetToHtml("", widget))
-			// FIXME I should handle events next!
 			for {
 				e := <- cc.events
 				fmt.Printf("Event is %#v\n", e)
 				//fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
 				newWidget, refresh := widget.Handle(data.Event{e.widget, e.event})
 				//fmt.Printf("New widget is %#v\n", newWidget)
-				if newWidget != nil {
+				if newWidget, ok := newWidget.(*data.Window); ok {
 					widget = newWidget
 					refresh = true
+				}
+				if widget.Title != oldtitle {
+					oldtitle = widget.Title
+					cc.pages <- []byte(`settitle ` + oldtitle)
+				}
+				if widget.Path != oldpath {
+					oldpath = widget.Path
+					cc.pages <- []byte(`setpath ` + oldpath)
 				}
 				if refresh {
 					cc.pages <- []byte(WidgetToHtml("", widget))
@@ -150,22 +164,18 @@ func skeletonpage(title, query string, req *http.Request) string {
            if (everything == null) {
              return
            }
-           //var received_msg = evt.data;
-           //alert("Message is received: " + received_msg);
-           everything.innerHTML=response;
-           //$('textarea').text(response);
+           if (response.substr(0,8) == 'setpath ') {
+             history.pushState('', response.substr(8), response.substr(8));
+           } else if (response.substr(0,9) == 'settitle ') {
+             document.title = response.substr(9)
+           } else {
+             everything.innerHTML=response;
+           }
           _poll();
         });
       }
       
-      $.get('/jsstatus', function(response) {
-        if (response.substr(0,8) == 'setpath ') {
-          history.pushState('', response.substr(8), response.substr(8));
-        } else {
-          $('textarea').text(response);
-        }
-        _poll();
-      });
+      _poll();
     }
   </script>
 </html>
