@@ -2,9 +2,11 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"fmt"
 	"gui/data"
-	"web"
+	"gui/web"
+	"time"
 )
 
 func main() {
@@ -15,6 +17,17 @@ func main() {
 		os.Exit(1)
 	} else {
 		fmt.Println("Exited successfully!")
+	}
+}
+
+var surveyfile *os.File
+
+func init() {
+	sf, err := os.OpenFile("survey.tex", os.O_WRONLY + os.O_APPEND + os.O_CREATE, 0666)
+	surveyfile = sf
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error appending to survey.tex:", err)
+		os.Exit(1)
 	}
 }
 
@@ -58,12 +71,36 @@ func NewWidget() *data.Window {
 	}
 	window.Widget = widget
 	button.HandleClick = func() (modified data.Widget, refresh bool) {
-		fmt.Println("Name:", namebox.Text.String)
-		fmt.Println("Partner:", partnerbox.Text.String)
-		fmt.Println("Did >>>>>>")
-		fmt.Println(dotoday.Text.String)
-		fmt.Println("Learned >>>>>>")
-		fmt.Println(learntoday.Text.String)
+		t := time.LocalTime()
+		// First let's see if today has already been created
+		if _,err := os.Stat(t.Format("2006-01-02")); err != nil {
+			surveyfile.WriteString(t.Format("\\thisday{Monday}{2006-01-02}\n\n"))
+		} else {
+			fmt.Println("Day already exists.")
+		}
+
+		dir := t.Format("2006-01-02/15.04.05")
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			fmt.Println("ERROR CREATING DIRECTORY", dir, "!")
+		}
+		f, err := os.Create(filepath.Join(dir, namebox.Text.String))
+		if err != nil {
+			fmt.Println("ERROR CREATING FILE", filepath.Join(dir, namebox.Text.String), "!")
+		}
+		defer f.Close()
+		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{\n%s}{\n%s}{\n%s}\n",
+			t.Format("3:04PM"),
+			namebox.Text.String, partnerbox.Text.String,
+			CleanLatex(dotoday.Text.String),
+			CleanLatex(learntoday.Text.String),
+			CleanLatex(workwell.Text.String))
+		if err == nil {
+			surveyfile.WriteString(t.Format("\\input{2006-01-02/15.04.05/" +
+				namebox.Text.String +"}\n"))
+		} else {
+			fmt.Println("I ran into a bug!", err)
+		}
 
 		widget.Rows = [][]data.Widget {
 			{ &data.Text{ "Thank you, " + namebox.Text.String + "!" } },
@@ -71,4 +108,28 @@ func NewWidget() *data.Window {
 		return nil, true
 	}
 	return &window
+}
+
+func CleanLatex(input string) (out string) {
+	aminmath := false
+	outints := []int{}
+	for _,c := range input {
+		switch c {
+		case '$':
+			aminmath = !aminmath
+		}
+		if !aminmath {
+			switch c {
+			case '_', '^', '\\':
+				outints = append(outints, '\\')
+			}
+		}
+		outints = append(outints, c)
+	}
+	out = string(outints)
+	//out = strings.Replace(out, "_", "\\_")
+	return out
+
+	//underscore := regexp.MustCompile(`_`)
+	//return underscore.ReplaceAllString(input, `\_`)
 }

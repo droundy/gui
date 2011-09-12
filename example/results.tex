@@ -1,0 +1,26 @@
+\documentclass[12pt,openany]{memoir}
+
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{fullpage}
+\usepackage{subfig}
+\usepackage{exscale}
+\usepackage{wrapfig}
+
+\newcommand{\thisday}[2]{
+  \section{#1, #2}
+}
+\newcommand{\daily}[6]{
+  \subsection{#2 - #3 \emph{(#1)}}
+  \paragraph{What did you do today?} #4
+  \paragraph{What is one thing you learned today?} #5
+  \paragraph{What is one thing that didn't work well today?} #6
+
+}
+
+\begin{document}
+
+\input{survey.tex}
+
+\end{document}

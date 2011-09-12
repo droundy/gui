@@ -6,3 +6,6 @@ benchmark
 example/example
 _obj
 bin/*
+results.*
+survey.tex
+20*
