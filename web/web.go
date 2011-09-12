@@ -1,7 +1,8 @@
+//target:github.com/droundy/gui/web
 package web
 
 import (
-	"gui/data"
+	"github.com/droundy/gui/data"
 	"io"
 	"fmt"
 	"os"

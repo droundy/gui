@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"fmt"
-	"gui/data"
-	"gui/web"
+	"github.com/droundy/gui/data"
+	"github.com/droundy/gui/web"
 	"time"
 )
 
@@ -36,7 +36,7 @@ func NewWidget() *data.Window {
 	
 	account := &data.Menu {
 		Options: []string{
-			"", "archimedes", "aristotle", "galileo", "newton",
+			"", "archimedes", "aristotle", "einstein", "galileo", "newton",
 		},
 	}
 	accountrow := &data.Table {
