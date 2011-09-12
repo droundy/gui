@@ -45,6 +45,18 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 		myname := widget.Text.String
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
+	case *data.Menu:
+		myname := widget.Options[widget.Value]
+		out = `<select onchange="say('` + mypath +
+			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `">`
+		for i,v := range widget.Options {
+			if i == widget.Value {
+				out += "\n<option value=\"" + v + `" selected='selected'>` + v + "</option>"
+			} else {
+				out += "\n<option value=\"" + v + `">` + v + "</option>"
+			}
+		}
+		out += "\n</select>"
 	case *data.Window:
 		return WidgetToHtml(parent, widget.Widget)
 	default:

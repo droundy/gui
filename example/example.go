@@ -34,6 +34,17 @@ func init() {
 func NewWidget() *data.Window {
 	window := data.Window{ "Class survey", "", nil }
 	
+	account := &data.Menu {
+		Options: []string{
+			"", "archimedes", "aristotle", "galileo", "newton",
+		},
+	}
+	accountrow := &data.Table {
+		[][]data.Widget{
+			{ &data.Text{"Account:"}, account },
+		},
+	}
+
 	namebox := &data.EditText{}
 	namerow := &data.Table {
 		[][]data.Widget{
@@ -58,6 +69,7 @@ func NewWidget() *data.Window {
 
 	widget := &data.Table{
 		[][]data.Widget{
+			{ accountrow },
 			{ namerow },
 			{ partnerrow },
 			{ &data.Text{"What did you do today?"} },
@@ -89,9 +101,9 @@ func NewWidget() *data.Window {
 			fmt.Println("ERROR CREATING FILE", filepath.Join(dir, namebox.Text.String), "!")
 		}
 		defer f.Close()
-		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{\n%s}{\n%s}{\n%s}\n",
+		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s}{\n%s}{\n%s}\n",
 			t.Format("3:04PM"),
-			namebox.Text.String, partnerbox.Text.String,
+			namebox.Text.String, partnerbox.Text.String, account.String(),
 			CleanLatex(dotoday.Text.String),
 			CleanLatex(learntoday.Text.String),
 			CleanLatex(workwell.Text.String))

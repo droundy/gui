@@ -16,6 +16,47 @@ func leafName(w interface{}) string {
 	return fmt.Sprintf("%T", w)
 }
 
+type Menu struct {
+	Value int
+	Options []string
+	HandleChanged
+}
+func (*Menu) iswidget() {}
+func (w *Menu) Lookup(p string) Widget {
+	return leafLookup(w, p)
+}
+func (w *Menu) Name() string {
+	return leafName(w)
+}
+func (w *Menu) Handle(event Event) (modified Widget, refresh bool) {
+	//fmt.Printf("Got handle of %#v in %#v\n", event, w)
+	if event.Widget != w.Name() {
+		fmt.Println("It isn't me:", w.Name(), event.Widget)
+		return
+	}
+	switch strings.SplitN(event.Event, ":", 2)[0] {
+	case "onchange":
+		old := w.Options[w.Value]
+		newv := strings.SplitN(event.Event, ":", 2)[1]
+		if newv != old {
+			for i := range w.Options {
+				if newv == w.Options[i] {
+					w.Value = i
+					if w.HandleChanged != nil {
+						return w.HandleChanged(old)
+					}
+					return
+				}
+			}
+			fmt.Println("New value doesn't make sense in Menu.Handle onchange")
+		}
+	}
+	return
+}
+func (w *Menu) String() string {
+	return w.Options[w.Value]
+}
+
 type Text struct {
 	String string
 }
