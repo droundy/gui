@@ -39,28 +39,16 @@ func NewWidget() *data.Window {
 			"", "archimedes", "aristotle", "einstein", "galileo", "newton",
 		},
 	}
-	accountrow := &data.Table {
-		[][]data.Widget{
-			{ &data.Text{"Account:"}, account },
-		},
-	}
+	accountrow := &data.Table{{ &data.Text{"Account:"}, account }}
 
 	namebox := &data.EditText{}
-	namerow := &data.Table {
-		[][]data.Widget{
-			{ &data.Text{"Name:"}, namebox },
-		},
-	}
+	namerow := &data.Table {{ &data.Text{"Name:"}, namebox }}
 	namebox.HandleChanged = func(old string) (modified data.Widget, refresh bool) {
 		window.Title = `Survey of ` + namebox.Text.String
 		return
 	}
 	partnerbox := &data.EditText{}
-	partnerrow := &data.Table {
-		[][]data.Widget{
-			{ &data.Text{"Partner:"}, partnerbox },
-		},
-	}
+	partnerrow := &data.Table{{ &data.Text{"Partner:"}, partnerbox }}
 	dotoday := &data.TextArea{}
 	learntoday := &data.TextArea{}
 	workwell := &data.TextArea{}
@@ -68,18 +56,16 @@ func NewWidget() *data.Window {
 	button := &data.Button{Text: data.Text{"Submit"}}
 
 	widget := &data.Table{
-		[][]data.Widget{
-			{ accountrow },
-			{ namerow },
-			{ partnerrow },
-			{ &data.Text{"What did you do today?"} },
-			{ dotoday },
-			{ &data.Text{"What is one thing you learned today?"} },
-			{ learntoday },
-			{ &data.Text{"What is one thing that didn't work well today?"} },
-			{ workwell },
-			{ button },
-		},
+		{ accountrow },
+		{ namerow },
+		{ partnerrow },
+		{ &data.Text{"What did you do today?"} },
+		{ dotoday },
+		{ &data.Text{"What is one thing you learned today?"} },
+		{ learntoday },
+		{ &data.Text{"What is one thing that didn't work well today?"} },
+		{ workwell },
+		{ button },
 	}
 	window.Widget = widget
 	button.HandleClick = func() (modified data.Widget, refresh bool) {
@@ -114,7 +100,7 @@ func NewWidget() *data.Window {
 			fmt.Println("I ran into a bug!", err)
 		}
 
-		widget.Rows = [][]data.Widget {
+		*widget = [][]data.Widget {
 			{ &data.Text{ "Thank you, " + namebox.Text.String + "!" } },
 		}
 		return nil, true

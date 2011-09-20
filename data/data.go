@@ -104,9 +104,7 @@ type TextArea struct {
 	EditText
 }
 
-type Table struct {
-	Rows [][]Widget
-}
+type Table [][]Widget
 func (*Table) iswidget() {}
 func (t *Table) Name() string {
 	return leafName(t)
@@ -116,7 +114,7 @@ func (t *Table) Lookup(p string) Widget {
 		return t
 	}
 	if i,j,rest,ok := t.lookInside(p); ok {
-		return t.Rows[i][j].Lookup(rest)
+		return (*t)[i][j].Lookup(rest)
 	}
 	return nil
 }
@@ -127,11 +125,11 @@ func (t *Table) lookInside(p string) (i int, j int, rest string, ok bool) {
 		return
 	}
 	i, err := strconv.Atoi(s[0])
-	if err != nil || i >= len(t.Rows) {
+	if err != nil || i >= len(*t) {
 		fmt.Println("Weird bug:  not a good row")
 		return
 	}
-	r := t.Rows[i]
+	r := (*t)[i]
 	j, err = strconv.Atoi(s[1])
 	if err != nil || j >= len(r) {
 		fmt.Println("Weird bug:  not a good column: ", s[1])
@@ -142,10 +140,10 @@ func (t *Table) lookInside(p string) (i int, j int, rest string, ok bool) {
 func (w *Table) Handle(event Event) (modified Widget, refresh bool) {
 	if i,j,rest,ok := w.lookInside(event.Widget); ok {
 		event.Widget = rest
-		//fmt.Printf("Passing off %#v to %#v\n", event, w.Rows[i][j])
-		newij, refresh := w.Rows[i][j].Handle(event)
+		//fmt.Printf("Passing off %#v to %#v\n", event, w[i][j])
+		newij, refresh := (*w)[i][j].Handle(event)
 		if newij != nil {
-			w.Rows[i][j] = newij
+			(*w)[i][j] = newij
 			fmt.Println("Something changed.")
 			return w, refresh
 		}

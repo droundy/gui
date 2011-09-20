@@ -26,7 +26,7 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 			`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
 	case *data.Table:
 		out = "<table>\n"
-		for i,r := range widget.Rows {
+		for i,r := range *widget {
 			class := "even" // I define classes for even and odd rows
 			switch {        // so you can alternate colors if you like.
 			case i == 0:    // I also define "even first" as a possible header
