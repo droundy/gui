@@ -42,6 +42,19 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 			out += "  </tr>\n"
 		}
 		out += "</table>\n"
+	case *data.Column:
+		out = ""
+		for i,w := range *widget {
+			class := "even" // I define classes for even and odd rows
+			switch {        // so you can alternate colors if you like.
+			case i == 0:    // I also define "even first" as a possible header
+				class = "even first"
+			case i & 1 == 1:
+				class = "odd"
+			}
+			whtml := WidgetToHtml(path.Join(parent, fmt.Sprint(i)), w)
+			out += `<p class="` + class + `">` + whtml + "</p>\n"
+		}
 	case *data.Button:
 		myname := widget.Text.String
 		return `<input type="submit" onclick="say('` + mypath +

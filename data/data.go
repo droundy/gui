@@ -104,6 +104,48 @@ type TextArea struct {
 	EditText
 }
 
+type Column []Widget
+func (*Column) iswidget() {}
+func (t *Column) Name() string {
+	return leafName(t)
+}
+func (t *Column) Lookup(p string) Widget {
+	if p == t.Name() {
+		return t
+	}
+	if i,rest,ok := t.lookInside(p); ok {
+		return (*t)[i].Lookup(rest)
+	}
+	return nil
+}
+func (t *Column) lookInside(p string) (i int, rest string, ok bool) {
+	s := strings.SplitN(p, "/", 2)
+	if len(s) != 2 {
+		fmt.Println("Weird bug:  not a nice name")
+		return
+	}
+	i, err := strconv.Atoi(s[0])
+	if err != nil || i >= len(*t) {
+		fmt.Println("Weird bug:  not a good row")
+		return
+	}
+	return i, s[1], true
+}
+func (w *Column) Handle(event Event) (modified Widget, refresh bool) {
+	if i,rest,ok := w.lookInside(event.Widget); ok {
+		event.Widget = rest
+		//fmt.Printf("Passing off %#v to %#v\n", event, w[i])
+		newi, refresh := (*w)[i].Handle(event)
+		if newi != nil {
+			(*w)[i] = newi
+			fmt.Println("Something changed.")
+			return w, refresh
+		}
+		return nil, refresh
+	}
+	return
+}
+
 type Table [][]Widget
 func (*Table) iswidget() {}
 func (t *Table) Name() string {
