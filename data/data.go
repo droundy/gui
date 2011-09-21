@@ -54,6 +54,17 @@ func (w *Menu) Handle(event Event) (modified Widget, refresh bool) {
 	}
 	return
 }
+func (w *Menu) SetString(newv string) {
+	if newv != w.Options[w.Value] {
+		for i := range w.Options {
+			if newv == w.Options[i] {
+				w.Value = i
+				return
+			}
+		}
+		fmt.Println("New value doesn't make sense in Menu.SetString")
+	}
+}
 func (w *Menu) String() string {
 	return w.Options[w.Value]
 }
