@@ -34,12 +34,13 @@ func init() {
 func NewWidget() *data.Window {
 	window := data.Window{ "Class survey", "", nil }
 	
-	account := &data.Menu {
+	team := &data.Menu {
 		Options: []string{
-			"", "archimedes", "aristotle", "einstein", "galileo", "newton",
+			"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
+			"hamilton", "ising", "joule", "kelvin", "lagrange", // "maxwell", "newton", "onsager", "planck",
 		},
 	}
-	accountrow := &data.Table{{ &data.Text{"Account:"}, account }}
+	teamrow := &data.Table{{ &data.Text{"Team:"}, team }}
 
 	namebox := &data.EditText{}
 	namerow := &data.Table {{ &data.Text{"Name:"}, namebox }}
@@ -56,7 +57,7 @@ func NewWidget() *data.Window {
 	button := &data.Button{Text: data.Text{"Submit"}}
 
 	widget := &data.Table{
-		{ accountrow },
+		{ teamrow },
 		{ namerow },
 		{ partnerrow },
 		{ &data.Text{"What did you do today?"} },
@@ -89,7 +90,7 @@ func NewWidget() *data.Window {
 		defer f.Close()
 		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s}{\n%s}{\n%s}\n",
 			t.Format("3:04PM"),
-			namebox.Text.String, partnerbox.Text.String, account.String(),
+			namebox.Text.String, partnerbox.Text.String, team.String(),
 			CleanLatex(dotoday.Text.String),
 			CleanLatex(learntoday.Text.String),
 			CleanLatex(workwell.Text.String))
