@@ -71,6 +71,7 @@ func (w *Menu) String() string {
 
 type Text struct {
 	String string
+	HandleClick
 }
 func (*Text) iswidget() {}
 func (t *Text) Lookup(p string) Widget {

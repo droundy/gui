@@ -37,34 +37,34 @@ func NewWidget() *data.Window {
 	team := &data.Menu {
 		Options: []string{
 			"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
-			"hamilton", "ising", "joule", "kelvin", "lagrange", // "maxwell", "newton", "onsager", "planck",
+			"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
 		},
 	}
-	teamrow := &data.Table{{ &data.Text{"Team:"}, team }}
+	teamrow := &data.Table{{ &data.Text{String: "Team:"}, team }}
 
 	namebox := &data.EditText{}
-	namerow := &data.Table {{ &data.Text{"Name:"}, namebox }}
+	namerow := &data.Table {{ &data.Text{String: "Name:"}, namebox }}
 	namebox.HandleChanged = func(old string) (modified data.Widget, refresh bool) {
 		window.Title = `Survey of ` + namebox.Text.String
 		return
 	}
 	partnerbox := &data.EditText{}
-	partnerrow := &data.Table{{ &data.Text{"Partner:"}, partnerbox }}
+	partnerrow := &data.Table{{ &data.Text{String: "Partner:"}, partnerbox }}
 	dotoday := &data.TextArea{}
 	learntoday := &data.TextArea{}
 	workwell := &data.TextArea{}
 
-	button := &data.Button{Text: data.Text{"Submit"}}
+	button := &data.Button{Text: data.Text{String: "Submit"}}
 
 	widget := &data.Table{
 		{ teamrow },
 		{ namerow },
 		{ partnerrow },
-		{ &data.Text{"What did you do today?"} },
+		{ &data.Text{String: "What did you do today?"} },
 		{ dotoday },
-		{ &data.Text{"What is one thing you learned today?"} },
+		{ &data.Text{String: "What is one thing you learned today?"} },
 		{ learntoday },
-		{ &data.Text{"What is one thing that didn't work well today?"} },
+		{ &data.Text{String: "What is one thing that didn't work well today?"} },
 		{ workwell },
 		{ button },
 	}
@@ -102,7 +102,7 @@ func NewWidget() *data.Window {
 		}
 
 		*widget = [][]data.Widget {
-			{ &data.Text{ "Thank you, " + namebox.Text.String + "!" } },
+			{ &data.Text{ String: "Thank you, " + namebox.Text.String + "!" } },
 		}
 		return nil, true
 	}

@@ -191,7 +191,9 @@ func skeletonpage(title, query string, req *http.Request) string {
              return
            }
            if (response.substr(0,8) == 'setpath ') {
-             history.pushState('', response.substr(8), response.substr(8));
+             if (history.pushState) { // workaround for older browsers
+               history.pushState('', response.substr(8), response.substr(8));
+             }
            } else if (response.substr(0,9) == 'settitle ') {
              document.title = response.substr(9)
            } else if (response.length < 10) {
@@ -199,7 +201,7 @@ func skeletonpage(title, query string, req *http.Request) string {
            } else {
              everything.innerHTML=response;
            }
-          _poll();
+           _poll();
         });
       }
       
