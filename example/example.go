@@ -7,6 +7,7 @@ import (
 	"github.com/droundy/gui/data"
 	"github.com/droundy/gui/web"
 	"time"
+	"strings"
 )
 
 func main() {
@@ -85,15 +86,15 @@ func NewWidget() *data.Window {
 		}
 		f, err := os.Create(filepath.Join(dir, namebox.Text.String))
 		if err != nil {
-			fmt.Println("ERROR CREATING FILE", filepath.Join(dir, namebox.Text.String), "!")
+			fmt.Println("ERROR CREATING FILE", filepath.Join(dir, namebox.Text.String), "!", err)
 		}
 		defer f.Close()
-		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s}{\n%s}{\n%s}\n",
+		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s\n}{\n%s\n}{\n%s\n}\n",
 			t.Format("3:04PM"),
 			namebox.Text.String, partnerbox.Text.String, team.String(),
-			CleanLatex(dotoday.Text.String),
-			CleanLatex(learntoday.Text.String),
-			CleanLatex(workwell.Text.String))
+			IndentWrapText("  ", CleanLatex(dotoday.Text.String)),
+			IndentWrapText("  ", CleanLatex(learntoday.Text.String)),
+			IndentWrapText("  ", CleanLatex(workwell.Text.String)))
 		if err == nil {
 			surveyfile.WriteString(t.Format("\\input{2006-01-02/15.04.05/" +
 				namebox.Text.String +"}\n"))
@@ -131,4 +132,19 @@ func CleanLatex(input string) (out string) {
 
 	//underscore := regexp.MustCompile(`_`)
 	//return underscore.ReplaceAllString(input, `\_`)
+}
+
+func IndentWrapText(indent, input string) string {
+	out := []string{}
+	nextline := indent
+	words := strings.Split(input, " ")
+	for _,w := range words {
+		if len(nextline) + 1 + len(w) < 80 {
+			nextline += " " + w
+		} else {
+			out = append(out, nextline)
+			nextline = indent + w
+		}
+	}
+	return strings.Join(out, "\n")
 }
