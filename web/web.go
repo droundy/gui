@@ -1,29 +1,77 @@
-//target:github.com/droundy/gui/web
+//target:github.com/droundy/gui/exp/web
 package web
 
 import (
-	"github.com/droundy/gui/data"
+	"github.com/droundy/gui/exp/data"
+	"github.com/droundy/gui/exp/gui"
 	"io"
 	"fmt"
 	"os"
 	"http"
 	"html"
 	"path"
+	"strings"
+	"strconv"
 )
 
+func widgetName(w data.Widget) (out string) {
+	out = fmt.Sprintf("%t", w)
+	switch w := w.(type) {
+	}
+	return
+}
+
+func lookupWidget(p string, w data.Widget) data.Widget {
+	if p == widgetName(w) {
+		return w
+	}
+	switch w := w.(type) {
+	case *data.Text, *data.EditText, *data.Button:
+		return w
+	case *data.Column:
+		s := strings.SplitN(p, "/", 2)
+		if len(s) != 2 {
+			panic("Weird bug:  not a nice name")
+		}
+		i, err := strconv.Atoi(s[0])
+		if err != nil || i >= len(*w) {
+			panic("Weird bug:  not a good row")
+		}
+		return lookupWidget(s[1], (*w)[i])
+	case *data.Table:
+		s := strings.SplitN(p, "/", 3)
+		if len(s) != 3 {
+			panic("Weird bug:  not a nice name")
+		}
+		i, err := strconv.Atoi(s[0])
+		if err != nil || i >= len(*w) {
+			panic("Weird bug:  not a good row")
+		}
+		r := (*w)[i]
+		j, err := strconv.Atoi(s[1])
+		if err != nil || j >= len(r) {
+			panic(fmt.Sprint("Weird bug:  not a good column: ", s[1]))
+		}
+		return lookupWidget(s[2], r[j])
+	default:
+		panic(fmt.Sprintf("Unknown lookupWidget type %#v\n", w))
+	}
+	return nil
+}
+
 func WidgetToHtml(parent string, widget data.Widget) (out string) {
-	mypath := path.Join(parent, widget.Name())
+	mypath := path.Join(parent, widgetName(widget))
 	switch widget := widget.(type) {
 	case *data.Text:
 		return html.EscapeString(widget.String)
 	case *data.EditText:
-		myname := widget.Text.String
+		myname := widget.String
 		return `<input type="text" onchange="say('` + mypath +
 			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `" />`
 	case *data.TextArea:
-		myname := widget.Text.String
-		return `<textarea cols="80" rows="5" onchange="say('` + mypath +
-			`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
+	 	myname := widget.String
+	 	return `<textarea cols="80" rows="5" onchange="say('` + mypath +
+	 		`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
 	case *data.Table:
 		out = "<table>\n"
 		for i,r := range *widget {
@@ -56,7 +104,7 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 			out += `<p class="` + class + `">` + whtml + "</p>\n"
 		}
 	case *data.Button:
-		myname := widget.Text.String
+		myname := widget.String
 		return `<input type="submit" onclick="say('` + mypath +
 			`',  'onclick')" value="` + html.EscapeString(myname) + `" />`
 	case *data.Menu:
@@ -71,15 +119,15 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 			}
 		}
 		out += "\n</select>"
-	case *data.Window:
-		return WidgetToHtml(parent, widget.Widget)
+	// case *data.Window:
+	// 	return WidgetToHtml(parent, widget.Widget)
 	default:
-		panic(fmt.Sprintf("Unhandled data.Widget type! %T", widget))
+		panic(fmt.Sprintf("Unhandled data.Widget type in WidgetToHtml! %T", widget))
 	}
 	return
 }
 
-func Serve(port int, newWidget func() *data.Window) os.Error {
+func Serve(port int, newWidget func() gui.Window) os.Error {
 	// We have a style sheet called style.css
 	http.HandleFunc("/style.css", styleServer)
 	http.HandleFunc("/jsupdate", func(w http.ResponseWriter, req *http.Request) {
@@ -109,40 +157,41 @@ func Serve(port int, newWidget func() *data.Window) os.Error {
 	// And we listen on the root for our gui program
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		// This is the generator of pages
-		widget := newWidget()
+		window := newWidget()
 
 		n := "job-" + (<- uniqueids)
-		oldtitle := widget.Title
-		oldpath := widget.Path
+		oldtitle := window.Title
+		oldpath := window.Path
 		io.WriteString(w, skeletonpage(oldtitle, n, req))
 
 		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
 		go func() {
-			//fmt.Printf("widget is:\n%#v\n", widget)
-			//fmt.Println("Html is:", WidgetToHtml("", widget))
 			cc.pages <- []byte(`settitle ` + oldtitle)
 			cc.pages <- []byte(`setpath ` + oldpath)
-			cc.pages <- []byte(WidgetToHtml("", widget))
+			cc.pages <- []byte(WidgetToHtml("", window.Contents.Raw()))
 			for {
-				e := <- cc.events
-				fmt.Printf("Event is %#v\n", e)
-				//fmt.Printf("Corresponding widget is %#v\n", widget.Lookup(e.widget))
-				newWidget, refresh := widget.Handle(data.Event{e.widget, e.event})
-				//fmt.Printf("New widget is %#v\n", newWidget)
-				if newWidget, ok := newWidget.(*data.Window); ok {
-					widget = newWidget
-					refresh = true
-				}
-				if widget.Title != oldtitle {
-					oldtitle = widget.Title
-					cc.pages <- []byte(`settitle ` + oldtitle)
-				}
-				if widget.Path != oldpath {
-					oldpath = widget.Path
-					cc.pages <- []byte(`setpath ` + oldpath)
-				}
-				if refresh {
-					cc.pages <- []byte(WidgetToHtml("", widget))
+				select {
+				case e := <- cc.events:
+					fmt.Printf("Event is %#v\n", e)
+					eventfor := lookupWidget(e.widget, window.Contents.Raw())
+					switch {
+					case e.event[:7] == "onclick":
+						if eventfor, ok := eventfor.(gui.Clickable); ok {
+							eventfor.Clicks() <- struct{}{}
+						} else {
+							fmt.Printf("Got unexpected click for %#v\n", eventfor)
+						}
+					case e.event[:8] == "onchange":
+						if eventfor, ok := eventfor.(gui.Changeable); ok {
+							eventfor.Changes() <- e.event[9:]
+						} else {
+							fmt.Printf("Got unexpected change for %#v\n", eventfor)
+						}
+					default:
+						fmt.Printf("Got weird event: %#v\n", e.event)
+					}
+				case window.Contents = <- window.Contents.Updater():
+					cc.pages <- []byte(WidgetToHtml("", window.Contents.Raw()))					
 				}
 			}
 		}()

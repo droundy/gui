@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"fmt"
-	"github.com/droundy/gui/data"
-	"github.com/droundy/gui/web"
+	"github.com/droundy/gui/exp/gui"
+	"github.com/droundy/gui/exp/web"
 	"time"
 	"strings"
 )
@@ -32,82 +32,103 @@ func init() {
 	}
 }
 
-func NewWidget() *data.Window {
-	window := data.Window{ "Class survey", "", nil }
+func NewWidget() gui.Window {
+	window := gui.Window{ "Class survey", "", nil }
 	
-	team := &data.Menu {
-		Options: []string{
-			"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
-			"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
-		},
-	}
-	teamrow := &data.Table{{ &data.Text{String: "Team:"}, team }}
+	teamname := ""
+	team := gui.Menu(0,
+		[]string{
+		"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
+		"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
+	})
+	teamrow := gui.Table([][]gui.Widget{{ gui.Text("Team:"), team }})
 
-	namebox := &data.EditText{}
-	namerow := &data.Table {{ &data.Text{String: "Name:"}, namebox }}
-	namebox.HandleChanged = func(old string) (modified data.Widget, refresh bool) {
-		window.Title = `Survey of ` + namebox.Text.String
-		return
-	}
-	partnerbox := &data.EditText{}
-	partnerrow := &data.Table{{ &data.Text{String: "Partner:"}, partnerbox }}
-	dotoday := &data.TextArea{}
-	learntoday := &data.TextArea{}
-	workwell := &data.TextArea{}
+	name := ""
+	namebox := gui.EditText(name)
+	namerow := gui.Row(gui.Text("Name:"), namebox)
+	// namebox.HandleChanged = func(old string) (modified gui.Widget, refresh bool) {
+	// 	window.Title = `Survey of ` + namebox.Text.String
+	// 	return
+	// }
+	partner := ""
+	partnerbox := gui.EditText(partner)
+	partnerrow := gui.Row(gui.Text("Partner:"), partnerbox)
+	donetext := ""
+	dotoday := gui.TextArea(donetext)
+	learnedtoday := ""
+	learntoday := gui.TextArea(learnedtoday)
+	problems := ""
+	workwell := gui.TextArea(problems)
 
-	button := &data.Button{Text: data.Text{String: "Submit"}}
+	button := gui.Button("Submit")
 
-	widget := &data.Table{
+	widget := gui.Table([][]gui.Widget{
 		{ teamrow },
 		{ namerow },
 		{ partnerrow },
-		{ &data.Text{String: "What did you do today?"} },
+		{ gui.Text("What did you do today?") },
 		{ dotoday },
-		{ &data.Text{String: "What is one thing you learned today?"} },
+		{ gui.Text("What is one thing you learned today?") },
 		{ learntoday },
-		{ &data.Text{String: "What is one thing that didn't work well today?"} },
+		{ gui.Text("What is one thing that didn't work well today?") },
 		{ workwell },
 		{ button },
-	}
-	window.Widget = widget
-	button.HandleClick = func() (modified data.Widget, refresh bool) {
-		t := time.LocalTime()
-		// First let's see if today has already been created
-		if _,err := os.Stat(t.Format("2006-01-02")); err != nil {
-			surveyfile.WriteString(t.Format("\\thisday{Monday}{2006-01-02}\n\n"))
-		} else {
-			fmt.Println("Day already exists.")
+	})
+	window.Contents = widget
+	go func() {
+		for {
+			select {
+			case teamname = <- team.Changes():
+				fmt.Println("Team name changed to", teamname)
+			case name = <- namebox.Changes():
+				//fmt.Println("Name changed to", name)
+			case partner = <- partnerbox.Changes():
+				//fmt.Println("Partner changed to", partner)
+			case donetext = <- dotoday.Changes():
+				fmt.Println("Done text is", donetext)
+			case learnedtoday = <- learntoday.Changes():
+				fmt.Println("Learned today is", learnedtoday)
+			case problems = <- workwell.Changes():
+				fmt.Println("Problems is", problems)
+			case _ = <- button.Clicks():
+				t := time.LocalTime()
+				// First let's see if today has already been created
+				if _,err := os.Stat(t.Format("2006-01-02")); err != nil {
+					surveyfile.WriteString(t.Format("\\thisday{Monday}{2006-01-02}\n\n"))
+				} else {
+					fmt.Println("Day already exists.")
+				}
+				
+				dir := t.Format("2006-01-02/15.04.05")
+				err := os.MkdirAll(dir, 0777)
+				if err != nil {
+					fmt.Println("ERROR CREATING DIRECTORY", dir, "!")
+					return
+				}
+				f, err := os.Create(filepath.Join(dir, name))
+				if err != nil {
+					fmt.Println("ERROR CREATING FILE", filepath.Join(dir, name), "!", err)
+					return
+				}
+				defer f.Close()
+				_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s\n}{\n%s\n}{\n%s\n}\n",
+					t.Format("3:04PM"),
+					name, partner, teamname,
+					IndentWrapText("  ", CleanLatex(donetext)),
+					IndentWrapText("  ", CleanLatex(learnedtoday)),
+					IndentWrapText("  ", CleanLatex(problems)))
+				if err == nil {
+					surveyfile.WriteString(t.Format("\\input{2006-01-02/15.04.05/" +
+						name +"}\n"))
+				} else {
+					fmt.Println("I ran into a bug!", err)
+					return
+				}
+				window.Contents.Updater() <- gui.Text("Thank you, " + name + "!")
+			}
 		}
-
-		dir := t.Format("2006-01-02/15.04.05")
-		err := os.MkdirAll(dir, 0777)
-		if err != nil {
-			fmt.Println("ERROR CREATING DIRECTORY", dir, "!")
-		}
-		f, err := os.Create(filepath.Join(dir, namebox.Text.String))
-		if err != nil {
-			fmt.Println("ERROR CREATING FILE", filepath.Join(dir, namebox.Text.String), "!", err)
-		}
-		defer f.Close()
-		_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s\n}{\n%s\n}{\n%s\n}\n",
-			t.Format("3:04PM"),
-			namebox.Text.String, partnerbox.Text.String, team.String(),
-			IndentWrapText("  ", CleanLatex(dotoday.Text.String)),
-			IndentWrapText("  ", CleanLatex(learntoday.Text.String)),
-			IndentWrapText("  ", CleanLatex(workwell.Text.String)))
-		if err == nil {
-			surveyfile.WriteString(t.Format("\\input{2006-01-02/15.04.05/" +
-				namebox.Text.String +"}\n"))
-		} else {
-			fmt.Println("I ran into a bug!", err)
-		}
-
-		*widget = [][]data.Widget {
-			{ &data.Text{ String: "Thank you, " + namebox.Text.String + "!" } },
-		}
-		return nil, true
-	}
-	return &window
+	}()
+	return window
 }
 
 func CleanLatex(input string) (out string) {
@@ -146,5 +167,6 @@ func IndentWrapText(indent, input string) string {
 			nextline = indent + w
 		}
 	}
+	out = append(out, nextline)
 	return strings.Join(out, "\n")
 }
