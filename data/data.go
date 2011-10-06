@@ -1,4 +1,4 @@
-//target:github.com/droundy/gui/exp/data
+//target:github.com/droundy/gui/data
 package data
 
 type Widget interface {

@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"fmt"
-	"github.com/droundy/gui/exp/gui"
-	"github.com/droundy/gui/exp/web"
+	"github.com/droundy/gui"
+	"github.com/droundy/gui/web"
 	"time"
 	"strings"
 )

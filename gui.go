@@ -1,7 +1,7 @@
-//target:github.com/droundy/gui/exp/gui
+//target:github.com/droundy/gui
 package gui
 
-import "github.com/droundy/gui/exp/data"
+import "github.com/droundy/gui/data"
 
 // This class defines a high-level API for creating gui programs.  The
 // core of this API is the Widget interface.  A number of functions are provided which create 

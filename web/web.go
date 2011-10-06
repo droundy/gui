@@ -1,9 +1,9 @@
-//target:github.com/droundy/gui/exp/web
+//target:github.com/droundy/gui/web
 package web
 
 import (
-	"github.com/droundy/gui/exp/data"
-	"github.com/droundy/gui/exp/gui"
+	"github.com/droundy/gui/data"
+	"github.com/droundy/gui"
 	"io"
 	"fmt"
 	"os"
