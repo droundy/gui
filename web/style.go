@@ -36,7 +36,7 @@ font-size: 14pt;
 td tr.odd {
   background-color: #bbbbff;
 }
-td dr.even {
+td tr.even {
   background-color: #ffffff;
 }
 p {

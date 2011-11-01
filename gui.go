@@ -107,7 +107,7 @@ func (w *column) Raw() data.Widget {
 	}
 	return &dw
 }
-func Column(es []Widget) interface{ Widget } {
+func Column(es ...Widget) interface{ Widget } {
 	setme := make(Updateable);
 	replacements := make(chan struct { int; Widget })
 	for i,w := range es {
