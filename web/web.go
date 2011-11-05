@@ -14,15 +14,8 @@ import (
 	"strconv"
 )
 
-func widgetName(w data.Widget) (out string) {
-	out = fmt.Sprintf("%t", w)
-	switch w := w.(type) {
-	}
-	return
-}
-
 func lookupWidget(p string, w data.Widget) data.Widget {
-	if p == widgetName(w) {
+	if p == w.TypeName() {
 		return w
 	}
 	switch w := w.(type) {
@@ -60,7 +53,7 @@ func lookupWidget(p string, w data.Widget) data.Widget {
 }
 
 func WidgetToHtml(parent string, widget data.Widget) (out string) {
-	mypath := path.Join(parent, widgetName(widget))
+	mypath := path.Join(parent, widget.TypeName())
 	switch widget := widget.(type) {
 	case *data.Text:
 		return html.EscapeString(widget.String)

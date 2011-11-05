@@ -3,6 +3,7 @@ package data
 
 type Widget interface {
 	iswidget()
+	TypeName() string
 }
 
 type Button struct {
@@ -10,6 +11,7 @@ type Button struct {
 	ClickChan chan struct{}
 }
 func (w *Button) iswidget() {}
+func (w *Button) TypeName() string { return "Button" }
 func (w *Button) Clicks() chan struct{} {
 	return w.ClickChan
 }
@@ -22,6 +24,7 @@ type Text struct {
 	ClickChan chan struct{}
 }
 func (w *Text) iswidget() {}
+func (w *Text) TypeName() string { return "Text" }
 func (w *Text) Clicks() chan struct{} {
 	return w.ClickChan
 }
@@ -35,6 +38,7 @@ type EditText struct {
 	ChangeChan chan string
 }
 func (w *EditText) iswidget() {}
+func (w *EditText) TypeName() string { return "EditText" }
 func (w *EditText) Changes() chan string {
 	return w.ChangeChan
 }
@@ -51,6 +55,7 @@ type TextArea struct {
 	ChangeChan chan string
 }
 func (w *TextArea) iswidget() {}
+func (w *TextArea) TypeName() string { return "TextArea" }
 func (w *TextArea) Changes() chan string {
 	return w.ChangeChan
 }
@@ -67,6 +72,7 @@ type Menu struct {
 	ChangeChan chan string
 }
 func (w *Menu) iswidget() {}
+func (w *Menu) TypeName() string { return "Menu" }
 func (w *Menu) Changes() chan string {
 	return w.ChangeChan
 }
@@ -77,9 +83,11 @@ func (w *Menu) Raw() Widget {
 
 type Column []Widget
 func (w *Column) iswidget() {}
+func (w *Column) TypeName() string { return "Column" }
 
 type Table [][]Widget
 func (w *Table) iswidget() {}
+func (w *Table) TypeName() string { return "Table" }
 
 type Window struct {
 	Title string

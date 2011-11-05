@@ -4,7 +4,9 @@ package gui
 import "github.com/droundy/gui/data"
 
 // This class defines a high-level API for creating gui programs.  The
-// core of this API is the Widget interface.  A number of functions are provided which create 
+// core of this API is the Widget interface.  A number of functions
+// are provided which create Widgets, but you can also create your own
+// Widgets if you'd like.
 
 // A Widget must support just two methods.  The first is a "Raw"
 // method, which provides a representation for the widget in terms of
