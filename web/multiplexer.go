@@ -6,7 +6,7 @@ import (
 
 type commChannel struct {
 	string
-	pages chan []byte // this carries the html sent to the client
+	pages    chan []byte        // this carries the html sent to the client
 	requests chan *http.Request // this carries posts sent by the client
 
 	// the events is the chan carrying events to the user
@@ -23,7 +23,7 @@ type pageRequest struct {
 type event struct {
 	string
 	widget string
-	event string
+	event  string
 }
 
 var newconnection chan<- commChannel
@@ -50,19 +50,19 @@ func init() {
 	go func() {
 		for {
 			select {
-			case cc := <- nc:
+			case cc := <-nc:
 				connmap[cc.string] = cc
-			case toclose := <- cl:
+			case toclose := <-cl:
 				connmap[toclose] = connmap[toclose], false
-			case req := <- pr:
-				if cc,ok := connmap[req.string]; ok {
+			case req := <-pr:
+				if cc, ok := connmap[req.string]; ok {
 					go func() {
 						// when ready, send a page from the source to the sink
-						req.ch <- (<- cc.pages)
+						req.ch <- (<-cc.pages)
 					}()
 				}
-			case e := <- ie:
-				if cc,ok := connmap[e.string]; ok {
+			case e := <-ie:
+				if cc, ok := connmap[e.string]; ok {
 					go func() {
 						// send the event to the appropriate channel...
 						cc.events <- e

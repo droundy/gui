@@ -24,7 +24,7 @@ func main() {
 var surveyfile *os.File
 
 func init() {
-	sf, err := os.OpenFile("survey.tex", os.O_WRONLY + os.O_APPEND + os.O_CREATE, 0666)
+	sf, err := os.OpenFile("survey.tex", os.O_WRONLY+os.O_APPEND+os.O_CREATE, 0666)
 	surveyfile = sf
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error appending to survey.tex:", err)
@@ -33,15 +33,15 @@ func init() {
 }
 
 func NewWidget() gui.Window {
-	window := gui.Window{ "Class survey", "", nil }
-	
+	window := gui.Window{"Class survey", "", nil}
+
 	teamname := ""
 	team := gui.Menu(0,
 		[]string{
-		"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
-		"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
-	})
-	teamrow := gui.Table([][]gui.Widget{{ gui.Text("Team:"), team }})
+			"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
+			"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
+		})
+	teamrow := gui.Table([][]gui.Widget{{gui.Text("Team:"), team}})
 
 	name := ""
 	namebox := gui.EditText(name)
@@ -63,42 +63,42 @@ func NewWidget() gui.Window {
 	button := gui.Button("Submit")
 
 	widget := gui.Table([][]gui.Widget{
-		{ teamrow },
-		{ namerow },
-		{ partnerrow },
-		{ gui.Text("What did you do today?") },
-		{ dotoday },
-		{ gui.Text("What is one thing you learned today?") },
-		{ learntoday },
-		{ gui.Text("What is one thing that didn't work well today?") },
-		{ workwell },
-		{ button },
+		{teamrow},
+		{namerow},
+		{partnerrow},
+		{gui.Text("What did you do today?")},
+		{dotoday},
+		{gui.Text("What is one thing you learned today?")},
+		{learntoday},
+		{gui.Text("What is one thing that didn't work well today?")},
+		{workwell},
+		{button},
 	})
 	window.Contents = widget
 	go func() {
 		for {
 			select {
-			case teamname = <- team.Changes():
+			case teamname = <-team.Changes():
 				fmt.Println("Team name changed to", teamname)
-			case name = <- namebox.Changes():
+			case name = <-namebox.Changes():
 				//fmt.Println("Name changed to", name)
-			case partner = <- partnerbox.Changes():
+			case partner = <-partnerbox.Changes():
 				//fmt.Println("Partner changed to", partner)
-			case donetext = <- dotoday.Changes():
+			case donetext = <-dotoday.Changes():
 				fmt.Println("Done text is", donetext)
-			case learnedtoday = <- learntoday.Changes():
+			case learnedtoday = <-learntoday.Changes():
 				fmt.Println("Learned today is", learnedtoday)
-			case problems = <- workwell.Changes():
+			case problems = <-workwell.Changes():
 				fmt.Println("Problems is", problems)
-			case _ = <- button.Clicks():
+			case _ = <-button.Clicks():
 				t := time.LocalTime()
 				// First let's see if today has already been created
-				if _,err := os.Stat(t.Format("2006-01-02")); err != nil {
+				if _, err := os.Stat(t.Format("2006-01-02")); err != nil {
 					surveyfile.WriteString(t.Format("\\thisday{Monday}{2006-01-02}\n\n"))
 				} else {
 					fmt.Println("Day already exists.")
 				}
-				
+
 				dir := t.Format("2006-01-02/15.04.05")
 				err := os.MkdirAll(dir, 0777)
 				if err != nil {
@@ -111,7 +111,7 @@ func NewWidget() gui.Window {
 					return
 				}
 				defer f.Close()
-				_,err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s\n}{\n%s\n}{\n%s\n}\n",
+				_, err = fmt.Fprintf(f, "\\daily{%s}{%s}{%s}{%s}{\n%s\n}{\n%s\n}{\n%s\n}\n",
 					t.Format("3:04PM"),
 					name, partner, teamname,
 					IndentWrapText("  ", CleanLatex(donetext)),
@@ -119,7 +119,7 @@ func NewWidget() gui.Window {
 					IndentWrapText("  ", CleanLatex(problems)))
 				if err == nil {
 					surveyfile.WriteString(t.Format("\\input{2006-01-02/15.04.05/" +
-						name +"}\n"))
+						name + "}\n"))
 				} else {
 					fmt.Println("I ran into a bug!", err)
 					return
@@ -134,7 +134,7 @@ func NewWidget() gui.Window {
 func CleanLatex(input string) (out string) {
 	aminmath := false
 	outints := []int{}
-	for _,c := range input {
+	for _, c := range input {
 		switch c {
 		case '$':
 			aminmath = !aminmath
@@ -159,8 +159,8 @@ func IndentWrapText(indent, input string) string {
 	out := []string{}
 	nextline := indent
 	words := strings.Split(input, " ")
-	for _,w := range words {
-		if len(nextline) + 1 + len(w) < 80 {
+	for _, w := range words {
+		if len(nextline)+1+len(w) < 80 {
 			nextline += " " + w
 		} else {
 			out = append(out, nextline)
