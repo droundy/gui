@@ -14,15 +14,8 @@ import (
 	"strconv"
 )
 
-func widgetName(w data.Widget) (out string) {
-	out = fmt.Sprintf("%t", w)
-	switch w := w.(type) {
-	}
-	return
-}
-
 func lookupWidget(p string, w data.Widget) data.Widget {
-	if p == widgetName(w) {
+	if p == w.TypeName() {
 		return w
 	}
 	switch w := w.(type) {
@@ -60,7 +53,7 @@ func lookupWidget(p string, w data.Widget) data.Widget {
 }
 
 func WidgetToHtml(parent string, widget data.Widget) (out string) {
-	mypath := path.Join(parent, widgetName(widget))
+	mypath := path.Join(parent, widget.TypeName())
 	switch widget := widget.(type) {
 	case *data.Text:
 		return html.EscapeString(widget.String)
@@ -69,21 +62,21 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 		return `<input type="text" onchange="say('` + mypath +
 			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `" />`
 	case *data.TextArea:
-	 	myname := widget.String
-	 	return `<textarea cols="80" rows="5" onchange="say('` + mypath +
-	 		`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
+		myname := widget.String
+		return `<textarea cols="80" rows="5" onchange="say('` + mypath +
+			`',  'onchange:'+this.value)">` + html.EscapeString(myname) + `</textarea>`
 	case *data.Table:
 		out = "<table>\n"
-		for i,r := range *widget {
+		for i, r := range *widget {
 			class := "even" // I define classes for even and odd rows
 			switch {        // so you can alternate colors if you like.
-			case i == 0:    // I also define "even first" as a possible header
+			case i == 0: // I also define "even first" as a possible header
 				class = "even first"
-			case i & 1 == 1:
+			case i&1 == 1:
 				class = "odd"
 			}
-			out += `  <tr class="`+ class + `">` + "\n"
-			for j,w := range r {
+			out += `  <tr class="` + class + `">` + "\n"
+			for j, w := range r {
 				whtml := WidgetToHtml(path.Join(parent, fmt.Sprint(i, "/", j)), w)
 				out += "    <td>" + whtml + "</td>\n"
 			}
@@ -92,12 +85,12 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 		out += "</table>\n"
 	case *data.Column:
 		out = ""
-		for i,w := range *widget {
+		for i, w := range *widget {
 			class := "even" // I define classes for even and odd rows
 			switch {        // so you can alternate colors if you like.
-			case i == 0:    // I also define "even first" as a possible header
+			case i == 0: // I also define "even first" as a possible header
 				class = "even first"
-			case i & 1 == 1:
+			case i&1 == 1:
 				class = "odd"
 			}
 			whtml := WidgetToHtml(path.Join(parent, fmt.Sprint(i)), w)
@@ -111,7 +104,7 @@ func WidgetToHtml(parent string, widget data.Widget) (out string) {
 		myname := widget.Options[widget.Value]
 		out = `<select onchange="say('` + mypath +
 			`',  'onchange:'+this.value)" value="` + html.EscapeString(myname) + `">`
-		for i,v := range widget.Options {
+		for i, v := range widget.Options {
 			if i == widget.Value {
 				out += "\n<option value=\"" + v + `" selected='selected'>` + v + "</option>"
 			} else {
@@ -135,8 +128,8 @@ func Serve(port int, newWidget func() gui.Window) os.Error {
 
 		// Wait for the response...
 		ch := make(chan []byte)
-		pagerequests <- pageRequest{ req.URL.RawQuery, ch }
-		w.Write( <-ch )
+		pagerequests <- pageRequest{req.URL.RawQuery, ch}
+		w.Write(<-ch)
 	})
 	// Events come via the URL "/say"
 	http.HandleFunc("/say", func(w http.ResponseWriter, req *http.Request) {
@@ -148,7 +141,7 @@ func Serve(port int, newWidget func() gui.Window) os.Error {
 			if w, ok := req.Form["widget"]; ok {
 				if e, ok := req.Form["event"]; ok {
 					if len(u) == 1 && len(w) == 1 && len(e) == 1 {
-						incomingevents <- event{ u[0], w[0], e[0] }
+						incomingevents <- event{u[0], w[0], e[0]}
 					}
 				}
 			}
@@ -159,19 +152,19 @@ func Serve(port int, newWidget func() gui.Window) os.Error {
 		// This is the generator of pages
 		window := newWidget()
 
-		n := "job-" + (<- uniqueids)
+		n := "job-" + (<-uniqueids)
 		oldtitle := window.Title
 		oldpath := window.Path
 		io.WriteString(w, skeletonpage(oldtitle, n, req))
 
-		cc := commChannel{ n, make(chan []byte), make(chan *http.Request), make(chan event) }
+		cc := commChannel{n, make(chan []byte), make(chan *http.Request), make(chan event)}
 		go func() {
 			cc.pages <- []byte(`settitle ` + oldtitle)
 			cc.pages <- []byte(`setpath ` + oldpath)
 			cc.pages <- []byte(WidgetToHtml("", window.Contents.Raw()))
 			for {
 				select {
-				case e := <- cc.events:
+				case e := <-cc.events:
 					fmt.Printf("Event is %#v\n", e)
 					eventfor := lookupWidget(e.widget, window.Contents.Raw())
 					switch {
@@ -190,8 +183,8 @@ func Serve(port int, newWidget func() gui.Window) os.Error {
 					default:
 						fmt.Printf("Got weird event: %#v\n", e.event)
 					}
-				case window.Contents = <- window.Contents.Updater():
-					cc.pages <- []byte(WidgetToHtml("", window.Contents.Raw()))					
+				case window.Contents = <-window.Contents.Updater():
+					cc.pages <- []byte(WidgetToHtml("", window.Contents.Raw()))
 				}
 			}
 		}()
@@ -207,7 +200,7 @@ func init() {
 	n := make(chan string)
 	uniqueids = n
 	go func() {
-		for i:=0; true; i++ {
+		for i := 0; true; i++ {
 			n <- fmt.Sprint(i)
 		}
 	}()
@@ -230,11 +223,11 @@ func skeletonpage(title, query string, req *http.Request) string {
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
   <script type="text/javascript">
     function say(who, what) {
-      $.post("say", { user: "`+query+`", widget: who, event: what })
+      $.post("say", { user: "` + query + `", widget: who, event: what })
     };
     var client = new function() {
       var _poll = function() {
-        $.get('/jsupdate?`+ query +`', function(response) {
+        $.get('/jsupdate?` + query + `', function(response) {
            var everything = document.getElementById("everything")
            if (everything == null) {
              return

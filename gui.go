@@ -4,7 +4,9 @@ package gui
 import "github.com/droundy/gui/data"
 
 // This class defines a high-level API for creating gui programs.  The
-// core of this API is the Widget interface.  A number of functions are provided which create 
+// core of this API is the Widget interface.  A number of functions
+// are provided which create Widgets, but you can also create your own
+// Widgets if you'd like.
 
 // A Widget must support just two methods.  The first is a "Raw"
 // method, which provides a representation for the widget in terms of
@@ -26,6 +28,7 @@ type Widget interface {
 }
 
 type Updateable chan Widget
+
 func (w *Updateable) Updater() chan Widget {
 	return chan Widget(*w)
 }
@@ -41,9 +44,13 @@ type button struct {
 	data.Button
 	Updateable
 }
-func Button(name string) interface { Widget; Clickable } {
-	return &button {
-		data.Button{ name, make(chan struct{}) },
+
+func Button(name string) interface {
+	Widget
+	Clickable
+} {
+	return &button{
+		data.Button{name, make(chan struct{})},
 		make(Updateable),
 	}
 }
@@ -52,9 +59,13 @@ type text struct {
 	data.Text
 	Updateable
 }
-func Text(t string) interface { Widget; Clickable } {
+
+func Text(t string) interface {
+	Widget
+	Clickable
+} {
 	return &text{
-		data.Text{ t, make(chan struct{})},
+		data.Text{t, make(chan struct{})},
 		make(Updateable),
 	}
 }
@@ -63,9 +74,14 @@ type edittext struct {
 	data.EditText
 	Updateable
 }
-func EditText(t string) interface { Widget; Clickable; Changeable } {
+
+func EditText(t string) interface {
+	Widget
+	Clickable
+	Changeable
+} {
 	return &edittext{
-		data.EditText{ t, make(chan struct{}), make(chan string)},
+		data.EditText{t, make(chan struct{}), make(chan string)},
 		make(Updateable),
 	}
 }
@@ -74,9 +90,14 @@ type textarea struct {
 	data.TextArea
 	Updateable
 }
-func TextArea(t string) interface { Widget; Clickable; Changeable } {
+
+func TextArea(t string) interface {
+	Widget
+	Clickable
+	Changeable
+} {
 	return &textarea{
-		data.TextArea{ t, make(chan struct{}), make(chan string)},
+		data.TextArea{t, make(chan struct{}), make(chan string)},
 		make(Updateable),
 	}
 }
@@ -90,19 +111,19 @@ func Menu(value int, options ...string) interface { Widget; Changeable } {
 		panic("value out of range")
 	}
 	return &menu{
-		data.Menu{ value, options, make(chan string)},
+		data.Menu{value, options, make(chan string)},
 		make(Updateable),
 	}
 }
-
 
 type column struct {
 	elems []Widget
 	Updateable
 }
+
 func (w *column) Raw() data.Widget {
 	dw := make(data.Column, len(w.elems))
-	for i, sw := range(w.elems) {
+	for i, sw := range w.elems {
 		dw[i] = sw.Raw()
 	}
 	return &dw
@@ -115,76 +136,87 @@ func Column(es ...Widget) interface{ Widget } {
 		thisw := w
 		go func() {
 			for {
-				x := <- thisw.Updater()
-				replacements <- struct{int;Widget}{thisi, x}
+				x := <-thisw.Updater()
+				replacements <- struct {
+					int
+					Widget
+				}{thisi, x}
 			}
 		}()
 	}
 	go func() {
 		for {
-			r := <- replacements
+			r := <-replacements
 			wnew := make([]Widget, len(es))
 			copy(wnew, es)
 			es = wnew
 			wnew[r.int] = r.Widget
-			setme <- &column{ es, setme }
+			setme <- &column{es, setme}
 		}
 	}()
-	return &column{ es, setme }
+	return &column{es, setme}
 }
 
-func Row(elems ...Widget) interface{ Widget } {
+func Row(elems ...Widget) interface {
+	Widget
+} {
 	return Table([][]Widget{elems})
 }
-
 
 type table struct {
 	elems [][]Widget
 	Updateable
 }
+
 func (w *table) Raw() data.Widget {
 	dw := make(data.Table, len(w.elems))
-	for i, r := range(w.elems) {
+	for i, r := range w.elems {
 		dw[i] = make([]data.Widget, len(r))
-		for j, entry := range(r) {
+		for j, entry := range r {
 			dw[i][j] = entry.Raw()
 		}
 	}
 	return &dw
 }
-func Table(es [][]Widget) interface{ Widget } {
+func Table(es [][]Widget) interface {
+	Widget
+} {
 	setme := make(Updateable)
-	replacements := make(chan struct { i, j int; Widget })
-	for i,r := range es {
-		for j,w := range r {
+	replacements := make(chan struct {
+		i, j int
+		Widget
+	})
+	for i, r := range es {
+		for j, w := range r {
 			thisw := w
 			thisi := i
 			thisj := j
 			go func() {
 				for {
-					x := <- thisw.Updater()
-					replacements <- struct{i, j int;Widget}{thisi, thisj, x}
+					x := <-thisw.Updater()
+					replacements <- struct {
+						i, j int
+						Widget
+					}{thisi, thisj, x}
 				}
 			}()
 		}
 	}
 	go func() {
 		for {
-			r := <- replacements
+			r := <-replacements
 			wnew := make([][]Widget, len(es))
 			copy(wnew, es)
 			es = wnew // so next change will preserve this one
 			wnew[r.i][r.j] = r.Widget
-			setme <- &table{ es, setme }
+			setme <- &table{es, setme}
 		}
 	}()
-	return &table{ es, setme }
+	return &table{es, setme}
 }
 
-
-
 type Window struct {
-	Title string
-	Path string
+	Title    string
+	Path     string
 	Contents Widget
 }
