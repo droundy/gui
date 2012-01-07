@@ -85,7 +85,7 @@ type menu struct {
 	data.Menu
 	Updateable
 }
-func Menu(value int, options []string) interface { Widget; Changeable } {
+func Menu(value int, options ...string) interface { Widget; Changeable } {
 	if value < 0 || value > len(options) {
 		panic("value out of range")
 	}
@@ -107,7 +107,7 @@ func (w *column) Raw() data.Widget {
 	}
 	return &dw
 }
-func Column(es []Widget) interface{ Widget } {
+func Column(es ...Widget) interface{ Widget } {
 	setme := make(Updateable);
 	replacements := make(chan struct { int; Widget })
 	for i,w := range es {

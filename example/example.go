@@ -37,10 +37,9 @@ func NewWidget() gui.Window {
 	
 	teamname := ""
 	team := gui.Menu(0,
-		[]string{
 		"", "archimedes", "boltzmann", "curie", "doppler", "euler", "feynman", "galileo",
 		"hamilton", "ising", "joule", "kelvin", "lagrange", "maxwell", "newton", "onsager", "planck",
-	})
+	)
 	teamrow := gui.Table([][]gui.Widget{{ gui.Text("Team:"), team }})
 
 	name := ""
